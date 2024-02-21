@@ -88,6 +88,7 @@ class Entity {
       this.data.direction = "rightTop";
     }
   }
+  
   move(){
     this.data.direction = this.data.direction || "leftBottom";
     this.data.moveFn[this.data.direction]()
