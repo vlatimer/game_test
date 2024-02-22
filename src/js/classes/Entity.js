@@ -1,97 +1,86 @@
 class Entity {
-  constructor(speedEntity){
+  constructor(width, x, y){
+    this.data = {
+      x: x || 0,
+      y: y || 0,
+      radius: width / 2, // radius of width circle
+    }
+  }
+}
+
+class MovingEntity extends Entity{
+  constructor(speedEntity, width, x ,y){
+    super(width, x, y);
     let self = this;
     this.data = {
-      x: 0,
-      y: 0,
-      speed: speedEntity,
+      ... this.data,
+      speed: speedEntity, // Speed in any direction
       speedX: 0,
       speedY: 0,
-      endX: 0,
+      endX: 0, // Coordinates entity to go
       endY: 0,
-      direction: null,
-      moveFn: {
-        leftBottom(){
-          self.data.x += self.data.speedX;
-          self.data.y += self.data.speedY;
-          if(self.data.x + self.data.speedX >= self.data.endX){
-            self.data.x = self.data.endX;  
-            self.data.speedX = 0;
-          }
-          if(self.data.y + self.data.speedY >= self.data.endY){
-            self.data.y = self.data.endY;
-            self.data.speedY = 0;
-          }
-        },
-        leftTop(){
-          self.data.x += self.data.speedX;
-          self.data.y -= self.data.speedY;
-          if(self.data.x + self.data.speedX >= self.data.endX){
-            self.data.x = self.data.endX; 
-            self.data.speedX = 0;
-          }
-          if(self.data.y - self.data.speedY <= self.data.endY){
-            self.data.y = self.data.endY;
-            self.data.speedY = 0;
-          }
-        },
-        rightBottom(){
-          self.data.x -= self.data.speedX;
-          self.data.y += self.data.speedY;
-          if(self.data.x - self.data.speedX <= self.data.endX){
-            self.data.x = self.data.endX; 
-            self.data.speedX = 0;
-          }
-          if(self.data.y + self.data.speedY >= self.data.endY){
-            self.data.speedY = 0;
-            self.data.y = self.data.endY;
-          }
-        },
-        rightTop(){
-          self.data.x -= self.data.speedX;
-          self.data.y -= self.data.speedY;
-          if(self.data.x - self.data.speedX <= self.data.endX){
-            self.data.x = self.data.endX; 
-            self.data.speedX = 0;
-          }
-          if(self.data.y - self.data.speedY <= self.data.endY){
-            self.data.y = self.data.endY;
-            self.data.speedY = 0;
-          }
-
-        },
+      see: this.data.radius + 50, // radius of watch area
+      move: () => {
+        self.data.x += self.data.speedX;
+        self.data.y += self.data.speedY;
+        self.lastMove();
+        
+        if(1 >= distBetweenPoints(self.data.x, self.data.y, self.data.endX, self.data.endY)){
+          self.data.speedX = 0;
+          self.data.speedY = 0;
+        };
       }
     }
   }
+  
   setRoadTo(toX, toY){
     this.data.endX = toX;
     this.data.endY = toY;
-    this.directionSet(toX, toY);
-    var distX = distBetweenCoordinates(this.data.x, toX);
-    var distY = distBetweenCoordinates(this.data.y, toY);
-    var angle = Math.atan(distY/distX);
+    let distX = distBetweenCoordinates(this.data.x, toX);
+    let distY = distBetweenCoordinates(this.data.y, toY);
+    let angle = Math.atan(distY / distX);
     this.data.speedX = Math.cos(angle) * this.data.speed;
     this.data.speedY = Math.sin(angle) * this.data.speed;
+    this.directionSet(toX, toY);
     console.log(this.data);
   }
 
-  directionSet(toX, toY){
-    if(toX === this.data.x && toY === this.data.y){
-      this.data.direction = null;
-    }else if(toX > this.data.x && toY > this.data.y){
-      this.data.direction = "leftBottom";
-    }else if(toX > this.data.x && toY < this.data.y){
-      this.data.direction = "leftTop";
-    }else if(toX < this.data.x && toY > this.data.y){
-      this.data.direction = "rightBottom";
-    }else if(toX < this.data.x && toY < this.data.y){
-      this.data.direction = "rightTop";
+  lastMove(){
+    let dist = distBetweenPoints(this.data.x, this.data.y, this.data.endX, this.data.endY);
+    if(dist < this.data.speed && dist){
+      let distX = distBetweenCoordinates(this.data.x, this.data.endX);
+      let distY = distBetweenCoordinates(this.data.y, this.data.endY);
+      let angle = Math.atan(distY / distX);
+      this.data.speedX = Math.cos(angle) * dist;
+      this.data.speedY = Math.sin(angle) * dist;
+      this.directionSet(this.data.endX, this.data.endY);
+      return true;
     }
+    return false;
+  }
+
+  directionSet(toX, toY){
+    let xFactor = 0;
+    let yFactor = 0; 
+    if(toX > this.data.x && toY > this.data.y){
+      xFactor = 1;
+      yFactor = 1;
+    }else if(toX > this.data.x && toY < this.data.y){
+      xFactor = 1;
+      yFactor = -1;
+    }else if(toX < this.data.x && toY > this.data.y){
+      xFactor = -1;
+      yFactor = 1;
+    }else if(toX < this.data.x && toY < this.data.y){
+      xFactor = -1;
+      yFactor = -1;
+    }
+    this.data.speedX *= xFactor;
+    this.data.speedY *= yFactor;
   }
   
   move(){
-    this.data.direction = this.data.direction || "leftBottom";
-    this.data.moveFn[this.data.direction]()
-    // console.log(this.data);
+    this.data.move()
   }
 }
+
